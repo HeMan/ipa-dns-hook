@@ -97,11 +97,9 @@ def deploy_cert(args):
 
 def main(argv):
     hook_name, args = argv[0], argv[1:]
-    ops = {
-            'deploy_challenge': create_txt_record,
-            'clean_challenge':  delete_txt_record,
-            'deploy_cert':      deploy_cert,
-            }
+    ops = {'deploy_challenge': create_txt_record,
+           'clean_challenge': delete_txt_record,
+           'deploy_cert': deploy_cert, }
 
     if hook_name in ops.keys():
         logger.info(' + freeipa hook executing: %s', hook_name)
