@@ -22,7 +22,6 @@ if "IPA_DOMAIN" not in os.environ:
 
 # If use and password is set, use that
 if ("IPA_USER" in os.environ) and ("IPA_PASSWORD" in os.environ):
-    print("User")
     IPA_USER = os.environ["IPA_USER"]
     IPA_PASSWORD = os.environ["IPA_PASSWORD"]
 else:
@@ -38,18 +37,30 @@ def _call_freeipa(json_operation):
     headers = {'content-type': 'application/json',
                'referer': 'https://%s/ipa' % IPA_SERVER}
     if IPA_USER:
-        result = requests.post("https://%s:%s@%s/ipa/session/json" % (IPA_USER, IPA_PASSWORD, IPA_SERVER),
-                               data=json_operation,
-                               headers=headers,
-                               verify='/etc/ipa/ipa.crt')
+        # Login and keep a cookie
+        login_result = requests.post("https://%s/ipa/session/login_password" % IPA_SERVER,
+                                     data="user=%s&password=%s" % (IPA_USER, IPA_PASSWORD),
+                                     headers={'content-Type':'application/x-www-form-urlencoded',
+                                              'referer': 'https://%s/ipa' % IPA_SERVER},
+                                     verify='/etc/ipa/ca.crt')
+
+        # No auth
+        auth = None
+        # Use cookies
+        cookies=login_result.cookies
     else:
-        kerberos_auth = HTTPKerberosAuth(mutual_authentication=REQUIRED,
-                                         sanitize_mutual_error_response=False)
-        result = requests.post("https://%s/ipa/session/json" % IPA_SERVER,
-                               data=json_operation,
-                               headers=headers,
-                               auth=kerberos_auth,
-                               verify='/etc/ipa/ca.crt')
+        # Use kerberos authentication
+        auth = HTTPKerberosAuth(mutual_authentication=REQUIRED,
+                                sanitize_mutual_error_response=False)
+        # No cookies
+        cookies = None
+
+    result = requests.post("https://%s/ipa/session/json" % IPA_SERVER,
+                           data=json_operation,
+                           headers=headers,
+                           auth=auth,
+                           cookies=cookies,
+                           verify='/etc/ipa/ca.crt')
 
     retval = result.json()
 
