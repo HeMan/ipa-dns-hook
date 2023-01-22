@@ -1,4 +1,4 @@
-#! /usr/bin/env python2
+#! /usr/bin/env python
 from requests_kerberos import HTTPKerberosAuth, REQUIRED
 from time import sleep
 
